@@ -65,7 +65,7 @@ def stake_nfts(nonce):
 def allow_staked_use(nonce):
     for token_id in token_ids:
         nft_index = fieldv2_contract.functions.nftsIndexOf(FieldV2Address).call()
-        allow_staked_txn = fieldv2_contract.functions.allowStakedUseByPeriphery(2, nft_index, token_id).build_transaction({
+        allow_staked_txn = fieldv2_contract.functions.allowStakedUseByPeriphery(2, 2, token_id).build_transaction({
             'chainId': 8899,
             'gas': 200000,
             'gasPrice': w3.to_wei('1', 'gwei'),
