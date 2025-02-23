@@ -1,6 +1,7 @@
 import csv
 import json
 from web3 import Web3
+import time 
 
 # Set up your Web3 provider (e.g., using Infura or local provider)
 w3 = Web3(Web3.HTTPProvider("https://rpc-l1.jibchain.net"))
@@ -29,6 +30,10 @@ with open("token_ids.csv", "r") as file:
 # Function to approve all tokens to the FieldV2 contract
 def approve_all_tokens():
     nonce = w3.eth.get_transaction_count(account)  # Get the current nonce
+    check_approval = erc721_contract.functions.isApprovedForAll(account, FieldV2Address).call()
+    if check_approval:
+        print("All tokens are already approved to FieldV2 contract")
+        return None, nonce
     approve_all_txn = erc721_contract.functions.setApprovalForAll(FieldV2Address, True).build_transaction({
         'chainId': 8899,  # Mainnet, change if using testnet
         'gas': 200000,
@@ -44,6 +49,7 @@ def approve_all_tokens():
 
 # Function to stake NFT tokens
 def stake_nfts(nonce):
+    counter = 0  # Counter to track number of transactions
     for token_id in token_ids:
         nft_index = fieldv2_contract.functions.nftsIndexOf(FieldV2Address).call()
         nft_stake_txn = fieldv2_contract.functions.nftStake(2, token_id).build_transaction({
@@ -55,14 +61,21 @@ def stake_nfts(nonce):
         signed_txn = w3.eth.account.sign_transaction(nft_stake_txn, private_key)
         txn_hash = w3.eth.send_raw_transaction(signed_txn.rawTransaction)
         print(f"NFT stake transaction sent for token {token_id}: {txn_hash.hex()}")
-        
+
         # Increment the nonce after the transaction is sent
         nonce += 1
+        counter += 1
+
+        # Break every 10 transactions and sleep for 12 seconds
+        if counter % 10 == 0:
+            print(f"Completed 10 transactions, taking a 12-second break...")
+            time.sleep(12)
 
     return nonce
 
 # Function to allow staked NFTs for use by periphery
 def allow_staked_use(nonce):
+    counter = 0  # Counter to track number of transactions
     for token_id in token_ids:
         nft_index = fieldv2_contract.functions.nftsIndexOf(FieldV2Address).call()
         allow_staked_txn = fieldv2_contract.functions.allowStakedUseByPeriphery(2, 2, token_id).build_transaction({
@@ -74,9 +87,15 @@ def allow_staked_use(nonce):
         signed_txn = w3.eth.account.sign_transaction(allow_staked_txn, private_key)
         txn_hash = w3.eth.send_raw_transaction(signed_txn.rawTransaction)
         print(f"Allow staked transaction sent for token {token_id}: {txn_hash.hex()}")
-        
+
         # Increment the nonce after the transaction is sent
         nonce += 1
+        counter += 1
+
+        # Break every 10 transactions and sleep for 12 seconds
+        if counter % 10 == 0:
+            print(f"Completed 10 transactions, taking a 12-second break...")
+            time.sleep(12)
 
     return nonce
 
